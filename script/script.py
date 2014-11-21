@@ -21,7 +21,7 @@ def compute_angle_from_top_lampshade(r, a, h):
     return atan(float(r) / (a + h))
 
 
-def compute_new_coordinates(vertex_coordinates, distance_to_center_of_lampshade, radius_of_lampshade, convex):
+def compute_new_coordinates(vertex_coordinates, distance_to_center_of_lampshade, radius_of_lampshade):
     """
     Back computing the projection onto the sphere
     """
@@ -37,10 +37,7 @@ def compute_new_coordinates(vertex_coordinates, distance_to_center_of_lampshade,
 
     x_new = radius_of_lampshade * sin(alpha) * cos(polar_phi)
     y_new = radius_of_lampshade * sin(alpha) * sin(polar_phi)
-    z_new = distance_to_center_of_lampshade + radius_of_lampshade * cos(alpha)
-
-    if not convex:
-        z_new = distance_to_center_of_lampshade - radius_of_lampshade * cos(alpha)
+    z_new = distance_to_center_of_lampshade - radius_of_lampshade * cos(alpha)
     
     return (x_new, y_new, z_new)
 
@@ -120,13 +117,11 @@ def extrude(value):
     )
 
 
-def scale_after_extrusion(extrude_value, radius_of_lampshade, convex):
+def scale_after_extrusion(extrude_value, radius_of_lampshade):
     """
     Proportionally scale outwards after the extrusion to create a lampshade with some thickness
     """
-    resize = 1 + extrude_value/radius_of_lampshade
-    if not convex:
-        resize = 1 - extrude_value/radius_of_lampshade
+    resize = 1 - extrude_value/radius_of_lampshade
     bpy.ops.transform.resize(value=(resize, resize, resize))
 
 
@@ -135,30 +130,27 @@ def cleanup_mesh_to_reduce_future_artifacts():
     rearrange_faces_for_better_results()
 
 
-def transform_to_lampshade(selected_object, distance_to_center_of_lampshade, radius_of_lampshade, convex):
+def transform_to_lampshade(selected_object, distance_to_center_of_lampshade, radius_of_lampshade):
     for vertex in selected_object.data.vertices:
-        vertex.co = compute_new_coordinates(vertex.co, distance_to_center_of_lampshade, radius_of_lampshade, convex)
+        vertex.co = compute_new_coordinates(vertex.co, distance_to_center_of_lampshade, radius_of_lampshade)
 
 
-def make_printable(thickness, radius_of_lampshade, convex):
-    make_solid(thickness, radius_of_lampshade, convex)
+def make_printable(thickness, radius_of_lampshade):
+    make_solid(thickness, radius_of_lampshade)
     make_normals_consistently_outwards()
 
 
-def make_solid(thickness, radius_of_lampshade, convex):
+def make_solid(thickness, radius_of_lampshade):
     extrude(thickness)
-    scale_after_extrusion(thickness, radius_of_lampshade, convex)
+    scale_after_extrusion(thickness, radius_of_lampshade)
 
 
 def create_stereographic_lampshade(distance_to_center_of_lampshade,
                                    radius_of_lampshade,
-                                   thickness_of_lampshade,
-                                   convex=True):
+                                   thickness_of_lampshade):
     """
     distance_to_center_of_lampshade and radius_of_lampshade are used to back project the SVG
     the actual height and radius may very a little depending on the thickness_of_lampshade
-    convex refers to the curvature of the lamp from the top of the lampshade (source of light)
-    convex only matters for non-symmetrical patterns such as patterns with words
     """
     
     selected_object = bpy.context.scene.objects.active
@@ -169,9 +161,9 @@ def create_stereographic_lampshade(distance_to_center_of_lampshade,
 
     change_mesh_color_for_better_visualization(selected_object)
 
-    transform_to_lampshade(selected_object, distance_to_center_of_lampshade, radius_of_lampshade, convex)
+    transform_to_lampshade(selected_object, distance_to_center_of_lampshade, radius_of_lampshade)
 
-    make_printable(thickness_of_lampshade, radius_of_lampshade, convex)
+    make_printable(thickness_of_lampshade, radius_of_lampshade)
 
 
 create_stereographic_lampshade(
